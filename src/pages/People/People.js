@@ -1,4 +1,4 @@
-import React, { Component } from 'react';
+import React, { useEffect, useState} from 'react';
 import { PEOPLE_URL } from '../../config';
 import PersonHeader from '../../components/Person/PersonHeader';
 import PersonInfo from '../../components/Person/PersonInfo';
@@ -6,112 +6,93 @@ import PersonFilm from '../../components/Person/PersonFilm';
 import PersonVehicles from '../../components/Person/PersonVehicles';
 import PersonStarships from '../../components/Person/PersonStarships';
 
-class People extends Component {
-    state = {
-        person: null,
-        person_name: null,
-        planets: null,
-        species: [],
-        films: [],
-        vehicles: [],
-        starships: []
-    };
+const People = (props) => {
 
-    componentDidMount() {
-        const { peopleId } = this.props.match.params;
+    const { peopleId } = props.match.params;
 
-        const endpoint = `${PEOPLE_URL}${peopleId}`;
-        this.fetchItem(endpoint);
-    }
+    const [person, setPerson] = useState(null);
+    const [personName, setPersonName] = useState(null);
+    const [planets, setPlanets] = useState(null);
+    const [species, setSpecies] = useState(null);
+    const [films, setFilms] = useState(null);
+    const [vehicles, setVehicles] = useState(null);
+    const [starships, setStarships] = useState(null);
 
-    componentDidUpdate(prevProps) {
-        if (this.props.match.params !== prevProps.match.params) {
-            const { peopleId } = this.props.match.params;
+    const fetchSpecific = async (type, endpoint) => {
+        const result = (endpoint === null || endpoint.length > 0)
+            ? await (await fetch(endpoint)).json() 
+            : null;
 
-            const endpoint = `${PEOPLE_URL}${peopleId}`;
-            this.fetchItem(endpoint);
+        switch(type) {
+            case 'planets':
+                setPlanets(result);
+                break;
+            case 'species':
+                setSpecies(result);
+                break;
+            default:
+                break;
         }
     }
 
-    fetchItem = async (endpoint) => {
-        const result = await (await fetch(endpoint)).json();
-        
-        this.setState({
-            person: result,
-            person_name: result.name,
-            planets: result.homeworld,
-            species: result.species,
-            films: result.films,
-            // vehicles: result.vehicles,
-            // starships: result.starships
-        });
+    const fetchMultiple = async (type, endpoint) => {
+        const result = endpoint.length > 0
+            ? await Promise.all(endpoint.map(async url => {
+                return await (await fetch(url)).json();
+            }))
+            : null;
 
-        result.homeworld && this.fetchSpecific(result.homeworld, 'planets');
-
-        if(result.species.length > 0) {
-            this.fetchSpecific(result.species, 'species')
-        }
-
-        if(result.films.length > 0) {
-            this.fetchMultiple('films', result.films);
-        }
-
-        if(result.vehicles.length > 0) {
-            this.fetchMultiple('vehicles', result.vehicles);
-        }
-
-        if(result.vehicles.length > 0) {
-            this.fetchMultiple('starships', result.starships);
+        switch(type) {
+            case 'films':
+                setFilms(result);
+                break;
+            case 'vehicles':
+                setVehicles(result);
+                break;
+            case 'starships':
+                setStarships(result);
+                break;
+            default:
+                break;
         }
     }
 
-    fetchSpecific = async (endpoint, type) => {
-        const result = await (await fetch(endpoint)).json();
-        
-        this.setState({
-            [type]: result
-        });
-    }
+    useEffect(() => {
+        const fetchItems = async () => {
+            const result = await (await fetch(`${PEOPLE_URL}${peopleId}`)).json();
 
-    fetchMultiple = async (type, endpoint) => {
-        const result = await Promise.all(endpoint.map(async url => {
-            return await (await fetch(url)).json();
-        }));
+            // get planet
+            fetchSpecific('planets', result.homeworld);
 
-        this.setState({
-            [type]: result
-        });
+            // get species
+            fetchSpecific('species', result.species)
 
-        console.log(this.state)
-    }
+            // get films
+            fetchMultiple('films', result.films);
 
-    render() {
-        const { person, person_name, species, planets, films, vehicles, starships } = this.state;
+            // get vehicles
+            fetchMultiple('vehicles', result.vehicles);
 
-        return (
-            <div className="p-4">
-                {(planets) ?
-                    <PersonHeader name={person_name} planets={planets} species={species} />
-                : null }
+            // get startships
+            fetchMultiple('starships', result.starships);
+            
+            setPerson(result);
+            setPersonName(result.name);
+        }
 
-                {person ?
-                    <PersonInfo info={person} />
-                : null }
+        fetchItems();
+    }, [peopleId])
 
-                {films.length > 0 ?
-                    <PersonFilm films={films} />
-                : null }
+    return(
+        <div className="p-4">
+            <PersonHeader name={personName} planets={planets} species={species} />
+            <PersonInfo info={person} />
+            <PersonFilm films={films} />
+            <PersonVehicles vehicles={vehicles} />
+            <PersonStarships starships={starships} />
+        </div>
+    )
 
-                {vehicles.length > 0 ?
-                    <PersonVehicles vehicles={vehicles} />
-                : null }
-
-                {starships.length > 0 ?
-                    <PersonStarships starships={starships} />
-                : null }
-            </div>
-        )
-    }
 }
 
 export default People;

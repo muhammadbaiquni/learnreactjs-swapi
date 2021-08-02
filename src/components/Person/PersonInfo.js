@@ -14,6 +14,9 @@ const PersonInfo = (props) => {
     ];
 
     const renderedItems = () => {
+        if (props.info === null)
+            return null;
+            
         let rendered = Object.entries(props.info).map((element, i) => {
 
             if(exclude.indexOf(element[0]) < 0)

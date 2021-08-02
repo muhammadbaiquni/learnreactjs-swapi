@@ -1,8 +1,10 @@
 import React from 'react';
 
 const PersonVehicles = ({vehicles}) => {
-
     const renderedItems = () => {
+        if (vehicles === null)
+            return null;
+
         let rendered = vehicles.map((element, i) => {
             return (
                 <tr key={i} className="hover:bg-gray-200">

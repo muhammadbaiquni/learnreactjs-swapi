@@ -1,8 +1,10 @@
 import React from 'react';
 
 const PersonFilm = ({films}) => {
-
     const renderedItems = () => {
+        if(films === null)
+            return null;
+
         let rendered = films.map((element, i) => {
             return (
                 <li key={i}>{element.title}</li>

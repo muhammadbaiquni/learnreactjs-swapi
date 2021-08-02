@@ -2,6 +2,9 @@ import React from 'react'
 
 const PersonStarships = ({starships}) => {
     const renderedItems = () => {
+        if (starships === null)
+            return null;
+
         let rendered = starships.map((element, i) => {
             return (
                 <tr key={i} className="hover:bg-gray-200">
@@ -10,9 +13,7 @@ const PersonStarships = ({starships}) => {
                     <td>{element.manufacturer}</td>
                 </tr>
             )
-        })
-
-        console.log(starships)
+        });
 
         return rendered;
     }
